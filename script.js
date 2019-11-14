@@ -28,6 +28,7 @@ require(['jquery'], function ($)
         var icon = {
             // actions
             'backup'  : { css: 'editing_backup' , pix: 'i/backup'  },
+            'searchandreplace': { css: 'search_replace', pix: 'i/search' }, // added icon search and replace
             'movedir' : { css: 'editing_right'  , pix: 't/right'   },
             'move'    : { css: 'editing_move_'  , pix: 't/move'    },
             'edit'    : { css: 'editing_update' , pix: 't/edit'    },
@@ -1160,15 +1161,19 @@ require(['jquery'], function ($)
                 { // for section edit menu dropdown
                     $menu = $(this).find("div[role='menu']").first(); // div with role="menu" in general section edit menu only
                     var $backup = null;
+                    var $searchandreplace = null;
 
                     if($menu.length)
                     {
                         $backup = create_special_activity_command("backup");
+                        $searchandreplace = create_special_activity_command("searchandreplace");
                         $menu.append($backup.attr("role", "menuitem")); // for menuitems in edit dropdown of sections
+                        $menu.append($searchandreplace.attr("role", "menuitem"));
 
                         if($menu.css("display") === "none")
                         {
                             $backup.append($("<span class='menu-action-text'/>").append($backup.attr('title')));
+                            $searchandreplace.append($("<span class='menu-action-text'/>").append($searchandreplace.attr('title')));
                         } // end of if
                     }
                     else

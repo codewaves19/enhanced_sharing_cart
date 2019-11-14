@@ -102,7 +102,7 @@ class block_enhanced_sharing_cart extends block_base
 			);
 		$this->page->requires->strings_for_js(
 			array('copyhere', 'notarget', 'backup', 'restore', 'movedir', 'clipboard',
-					'confirm_backup', 'confirm_backup_section', 'confirm_userdata', 'confirm_userdata_section', 'confirm_delete'),
+					'confirm_backup', 'confirm_backup_section', 'confirm_userdata', 'confirm_userdata_section', 'confirm_delete', 'searchandreplace'),
 			__CLASS__
 			);
 		
