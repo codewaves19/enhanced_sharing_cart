@@ -790,4 +790,102 @@ class controller
 			$newsectioncreated = $section + 1;
 		}
 	} //end 
+
+	/**
+	 * Replace title and summary in section and in it's modules
+	 * @param int $courseid
+	 * @param int $sectionid
+	 * @param string $searchphrase
+	 * @param string $replacephrase
+	 * @throws \moodle_exception
+	 */
+	public function replace_in_section($courseid, $sectionid, $searchphrase, $replacephrase, $choice_section, $choice_modules)
+	{
+		global $DB;
+		$itemids = array();
+		$count = 0;
+		$course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
+
+		try {
+			// Save section data
+			$section = $DB->get_record('course_sections', array('id' => $sectionid)); //Table get section name and summary and all modules insection
+
+			// Get section_info object with all availability options.
+			//$sectioninfo = get_fast_modinfo($courseid)->get_section_info($sectionid);
+			//$sectionname = $sectioninfo->name;
+			//$sectionsummary = $sectioninfo->summary;
+			//$sectionmodules = $sectioninfo->modinfo;
+
+			strtolower($searchphrase);
+			strtolower($replacephrase);
+
+			$patterns = array();
+			$patterns[0] = '/\b' . $searchphrase . '\b/';
+			$patterns[1] = '/\b' . ucfirst($searchphrase) . '\b/';
+			$patterns[2] = '/\b' . strtoupper($searchphrase) . '\b/';
+
+			$replacements = array();
+			$replacements[0] = $replacephrase;
+			$replacements[1] = ucfirst($replacephrase);
+			$replacements[2] = strtoupper($replacephrase);
+
+			$modules = $DB->get_records("course_modules", array("section" => $sectionid)); // table
+
+			// Section Title changes
+			if (in_array("name", $choice_section) || in_array("summary", $choice_section)) {
+				$update_section_array = array('id' => $section->id);
+				if (in_array("name", $choice_section)) {
+					$section->name = preg_replace($patterns, $replacements, $section->name, $limit = -1, $count);
+					$update_section_array['name'] = $section->name;
+				}
+				if (in_array("summary", $choice_section)) {
+					$section->summary = preg_replace($patterns, $replacements, $section->summary, $limit = -1, $count);
+					$update_section_array['summary'] = $section->summary;
+				}
+				$DB->update_record('course_sections', $update_section_array);
+			}
+
+			if (in_array("name", $choice_modules) || in_array("intro", $choice_modules)) {
+				// Section Modules Title changes
+				foreach ($modules as $module) {
+					if (isset($module->deletioninprogress) && $module->deletioninprogress == 1) {
+						continue;
+					}
+					$cm = get_coursemodule_from_id('', $module->id, 0, true, MUST_EXIST);
+					$modintro = self::get_cm_intro($cm);
+					$modname = $cm->name; // full heading/ title
+
+					$mod = $DB->get_record('modules', array('id' => $cm->module), $fields = '*', $strictness = IGNORE_MISSING);
+					array_push($itemids, $modname);
+					array_push($itemids, $modintro);
+
+					$cmnew = new \stdClass();
+					$cmnew->id = $cm->instance;
+
+					//if ($DB->record_exists($mod->name, array('id' => $cm->instance))) {
+					$update_activity_array = array('id' => $cmnew->id);
+
+					if (in_array("name", $choice_modules)) {
+						$cmnew->name = preg_replace($patterns, $replacements, $itemids[0], $limit = -1, $count);
+						$update_activity_array['name'] = $cmnew->name;
+					}
+					if (in_array("intro", $choice_modules)) {
+						$cmnew->intro = preg_replace($patterns, $replacements, $itemids[1], $limit = -1, $count);
+						$update_activity_array['intro'] = $cmnew->intro;
+					}
+					$DB->update_record($mod->name, $update_activity_array);
+					//}
+					$itemids = [];
+				} // End foreach
+			}
+			rebuild_course_cache($courseid, true);
+		} catch (\moodle_exception $ex) {
+			if ($ex->errorcode == "Data is not available") {
+				foreach ($itemids as $itemid) {
+					$this->delete($itemid);
+				}
+			}
+			throw $ex;
+		}
+	}
 } // end controller

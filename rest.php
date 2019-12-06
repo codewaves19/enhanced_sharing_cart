@@ -55,6 +55,16 @@ try {
             $course = required_param('course', PARAM_INT);
             $controller->backup_section($sectionid, $sectionname, $userdata, $course);
             exit;
+        case 'searchandreplace': // manisha
+            //$userdata = required_param('userdata', PARAM_BOOL);
+            $courseid = required_param('course', PARAM_INT);
+            $sectionid = required_param('sectionid', PARAM_INT);
+            $searchphrase = required_param('searchphrase', PARAM_TEXT);
+            $replacephrase = required_param('replacephrase', PARAM_TEXT);
+            $choice_section = optional_param('choice_section',"", PARAM_TEXT);
+            $choice_modules = optional_param('choice_modules',"", PARAM_TEXT);
+            $controller->replace_in_section($courseid, $sectionid, $searchphrase, $replacephrase, $choice_section, $choice_modules);
+            exit;
         case 'movedir':
             $id = required_param('id', PARAM_INT);
             $to = required_param('to', PARAM_TEXT);

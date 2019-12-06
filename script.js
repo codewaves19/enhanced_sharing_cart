@@ -1186,6 +1186,10 @@ require(['jquery'], function ($)
                     {
                         $.on_section_backup(sectionID); 
                     }); // end of backup on click function
+                    $searchandreplace.click(function () // menu item search replace is clicked
+                    {
+                        $.on_searchandreplace(sectionID);
+                    }); // end of backup on click function 
                 } // end of else
             });
         };
@@ -1209,4 +1213,113 @@ require(['jquery'], function ($)
 
         $.init(); // init function call
     })
+
+/**
+     *  On search and replace command clicked
+     *
+     *  @param {DOMEventFacade} e
+     */
+    $.on_searchandreplace = function (sectionID) {
+        // For creating targets for search and replace process//
+        /** @var {Object}  The current course */
+        var course = new function () {
+            var body = $('body');
+            this.id = body.attr('class').match(/course-(\d+)/)[1];
+            this.is_frontpage = body.hasClass('pagelayout-frontpage');
+        };
+        var $checkboxes_section = $('<ul class="ul_checkbox"><li>Replace in section:&nbsp;&nbsp;<input type="checkbox" id="title" name="checkboxes_section" value="name" checked required><label for="title">Title</label></li><li><input type="checkbox" id="inSummary" name="checkboxes_section" value="summary" checked required><label for="summary">Summary</label></li></ul>');
+        var $checkboxes_modules = $('<ul class="ul_checkbox"><li>Replace in activities and resources:&nbsp;&nbsp;<input type="checkbox" id="inname" name="checkboxes_modules" value="name" checked required><label for="name">Name</label></li><li><input type="checkbox" id="intro" name="checkboxes_modules" value="intro" checked required><label for="intro">Description</label></li></ul>');
+        var $action_btn = $('<div class="action_btn"><span><a id="submit" class="btn btn-primary" href="javascript:void(0)" role="button">Ok</a></span><span><a id="cancel" class="btn btn-secondary" href="javascript:void(0)" role="button">Cancel</a></span></div>');
+        var $info = $('<p class="muted bg-light"><strong>Info: </strong>Only the titles and descriptions will be replaced. No changes will be made in the actual content.</p>');
+        var $input = $('<p><span class=""><input type="text" placeholder="Search for..." name="searchphrase" size="30" required onchange="$searchphrase = $(this).val();"></span><span class=""><input type="text" placeholder="Replace with..." name="replacephrase" size="30" required onchange="$replacephrase = $(this).val();"></span></p>')
+        var $form = $('<form />')
+            .append($input)
+            .append($checkboxes_section)
+            .append($checkboxes_modules)
+            .append($info)
+            .append($action_btn)
+
+        var $anchor = $('<div />')
+            .addClass('searchReplaceForm')
+            .attr('title', 'searchReplaceForm')
+            .append('<h4 class="searchandreplaceheading">Search and Replace in section</h4>')
+            .append($form)
+        // Info = only the titles and descriptions will be replaced no changes will be made in the actual content. all checked by default. (title and description) dont display internal name to user.. OK and cancel btn. Disable ok if non is selected
+        var $commands = $('span.inplaceeditable[data-itemtype=sectionname][data-itemid=' + sectionID + ']');
+        var sectionName = $commands.closest("li.section.main").attr('aria-label');
+        var $first = $commands.closest("li.section.main").children('div.content').children('h3.sectionname').after($anchor);
+
+        /**
+        *  Get an action URL
+        *  @param {String} name   The action name
+        *  @param {Object} [args] The action parameters
+        *  @return {String}
+        */
+        function get_action_url(name, args) {
+            var url = M.cfg.wwwroot + '/blocks/enhanced_sharing_cart/' + name + '.php';
+            if (args) {
+                var q = [];
+                for (var k in args) {
+                    q.push(k + '=' + encodeURIComponent(args[k]));
+                }
+                url += '?' + q.join('&');
+            }
+            return url;
+        }
+        $("#cancel").click(function () {
+            $anchor.hide();
+            return false;
+        });
+        // Getting values from the form
+        $("searchReplaceForm").click
+            (
+                function (event) {
+                    if (event.target.className !== "searchReplaceForm") {
+                        $(".searchReplaceForm").hide();
+                    }
+                }
+            );
+        $("a#submit").click(function () {
+
+            //Do stuff when clicked
+            $searchphrase = $("input[type=text][name=searchphrase]").val();
+            $replacephrase = $("input[type=text][name=replacephrase]").val();
+
+            var $choice_section = Array();
+            $.each($("input[name='checkboxes_section']:checked"), function () {
+                $choice_section.push($(this).val());
+            });
+            var $choice_modules = Array();
+            $.each($("input[name='checkboxes_modules']:checked"), function () {
+                $choice_modules.push($(this).val());
+            });
+
+            $.post(get_action_url("rest"),
+                {
+                    "action": "searchandreplace",
+                    "course": course.id,
+                    "sectionid": sectionID,
+                    "sectionname": sectionName,
+                    "searchphrase": $searchphrase,
+                    "replacephrase": $replacephrase,
+                    "choice_section": $choice_section,
+                    "choice_modules": $choice_modules
+                    //"userdata": userdata,
+                    //"sesskey": M.cfg.sesskey                        
+                },
+                function (response) {
+                    return alert("Database updated!!! Press the OK button to view changes.");
+                    $anchor.hide();
+                })
+                .fail(function (response) {
+                    alert("error");
+                })
+                .always(function (response) {
+                    $anchor.hide();
+                    location.reload();
+                    // alert("finished");
+                });
+        });
+
+    };
 }); // end jquery
