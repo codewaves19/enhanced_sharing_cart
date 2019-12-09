@@ -1,4 +1,4 @@
-Enhanched Sharing Cart 
+Enhanced Sharing Cart 
 ============
 
 This will enhance the Moodle sharing cart plugin:
